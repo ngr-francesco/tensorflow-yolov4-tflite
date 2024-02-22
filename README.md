@@ -8,7 +8,8 @@ Download yolov4.weights file: https://github.com/AlexeyAB/darknet?tab=readme-ov-
 
 
 ### Prerequisites
-* Tensorflow 2.12 
+* Tensorflow 2.12.
+
 You can install a conda environment to run the scripts in this repo by using the `conda-env` yaml file.
 ```bash
 # Navigate to the folder where you cloned the repo and from there run:
@@ -71,7 +72,7 @@ source ../../scripts/get_coco_dataset_2017.sh
 # Create a pickle representation for the dataset
 python ../../scripts/coco_convert.py --input ./coco/annotations/instances_val2017.json --output val2017.pkl
 # Convert the annotations to txt (used when converting to tflite)
-python coco_annotation.py --coco_path ./coco 
+python ../../scripts/coco_annotation.py --coco_path ./coco 
 ```
 
 Now you can proceed to quantize yolo to int8 parameters (assumes you're back to the root directory of the repo).
