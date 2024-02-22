@@ -80,6 +80,11 @@ Now you can proceed to quantize yolo to int8 parameters (assumes you're back to 
 # yolov4 quantize int8
 python convert_tflite.py --weights ./checkpoints/yolov4-416 --output ./checkpoints/yolov4-416-int8.tflite --quantize_mode int8 --dataset ./data/dataset/val2017.txt
 ```
+And run the demo:
+```bash
+# Run demo tflite model
+python detect.py --weights ./checkpoints/yolov4-416-int8.tflite --size 416 --model yolov4 --image ./data/kite.jpg --framework tflite
+```
 
 ### Convert to TensorRT
 ```bash# yolov3

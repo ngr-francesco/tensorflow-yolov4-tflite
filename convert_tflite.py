@@ -21,9 +21,10 @@ def representative_data_gen():
       original_image=cv2.imread(fimage[input_value])
       original_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
       image_data = utils.image_preprocess(np.copy(original_image), [FLAGS.input_size, FLAGS.input_size])
-      img_in = image_data[np.newaxis, ...].astype(np.float32)
+      dtype = np.float32 if FLAGS.quantize_mode == 'int8' else np.float32
+      img_in = image_data[np.newaxis, ...].astype(dtype)
       print("calibration image {}".format(fimage[input_value]))
-      yield [img_in]
+      yield {"input_1": img_in}
     else:
       continue
 
@@ -36,10 +37,11 @@ def save_tflite():
     converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS, tf.lite.OpsSet.SELECT_TF_OPS]
     converter.allow_custom_ops = True
   elif FLAGS.quantize_mode == 'int8':
-    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
-    converter.optimizations = [tf.lite.Optimize.DEFAULT]
-    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS, tf.lite.OpsSet.SELECT_TF_OPS]
     converter.allow_custom_ops = True
+    converter.optimizations = [tf.lite.Optimize.DEFAULT]
+    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8, tf.lite.OpsSet.SELECT_TF_OPS]
+    converter.inference_input_type = tf.int8  # or tf.uint8
+    converter.inference_output_type = tf.int8  # or tf.uint8
     converter.representative_dataset = representative_data_gen
 
   tflite_model = converter.convert()

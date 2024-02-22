@@ -41,9 +41,11 @@ def main(_argv):
     # image_data = image_data[np.newaxis, ...].astype(np.float32)
 
     images_data = []
+    # Fully quantized model requires int8 as input
+    dtype = np.int8 if 'int8' in FLAGS.weights else np.float32
     for i in range(1):
         images_data.append(image_data)
-    images_data = np.asarray(images_data).astype(np.float32)
+    images_data = np.asarray(images_data).astype(dtype)
 
     if FLAGS.framework == 'tflite':
         interpreter = tf.lite.Interpreter(model_path=FLAGS.weights)
@@ -57,7 +59,6 @@ def main(_argv):
         interpreter.set_tensor(input_details[0]['index'], images_data)
         interpreter.invoke()
         pred = [interpreter.get_tensor(output_details[i]['index']) for i in range(len(output_details))]
-        print("PREDICTION", np.shape(pred[0]))
         if FLAGS.model == 'yolov3' and FLAGS.tiny == True:
             boxes, pred_conf = filter_boxes(pred[1], pred[0], score_threshold=0.25, input_shape=tf.constant([input_size, input_size]))
         else:
