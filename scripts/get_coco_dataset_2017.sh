@@ -31,9 +31,14 @@ wait_to_finish download_pids
 
 inflate_pids=()
 
+echo "Extracting..."
+
 unzip 'val2017.zip' -d coco/images/ &
 inflate_pids+=("$!")
 unzip 'annotations_trainval2017.zip' -d coco/annotations/ & # Inflates to 'coco/annotations'.
 inflate_pids+=("$!")
 
 wait_to_finish inflate_pids
+
+echo "Cleaning up zip files"
+rm 'val2017.zip' 'annotations_trainval2017.zip'

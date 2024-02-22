@@ -4,11 +4,16 @@
 YOLOv4, YOLOv4-tiny Implemented in Tensorflow 2.0. 
 Convert YOLO v4, YOLOv3, YOLO tiny .weights to .pb, .tflite and trt format for tensorflow, tensorflow lite, tensorRT.
 
-Download yolov4.weights file: https://drive.google.com/open?id=1cewMfusmPjYWbrnuJRuKhPMwRe_b9PaT
+Download yolov4.weights file: https://github.com/AlexeyAB/darknet?tab=readme-ov-file#how-to-evaluate-fps-of-yolov4-on-gpu
 
 
 ### Prerequisites
-* Tensorflow 2.3.0rc0
+* Tensorflow 2.12 
+You can install a conda environment to run the scripts in this repo by using the `conda-env` yaml file.
+```bash
+# Navigate to the folder where you cloned the repo and from there run:
+conda env create --name my_env --file conda-env.yml
+```
 
 ### Performance
 <p align="center"><img src="data/performance.png" width="640"\></p>
@@ -51,13 +56,30 @@ python convert_tflite.py --weights ./checkpoints/yolov4-416 --output ./checkpoin
 # yolov4 quantize float16
 python convert_tflite.py --weights ./checkpoints/yolov4-416 --output ./checkpoints/yolov4-416-fp16.tflite --quantize_mode float16
 
-# yolov4 quantize int8
-python convert_tflite.py --weights ./checkpoints/yolov4-416 --output ./checkpoints/yolov4-416-int8.tflite --quantize_mode int8 --dataset ./coco_dataset/coco/val207.txt
-
 # Run demo tflite model
 python detect.py --weights ./checkpoints/yolov4-416.tflite --size 416 --model yolov4 --image ./data/kite.jpg --framework tflite
 ```
-Yolov4 and Yolov4-tiny int8 quantization have some issues. I will try to fix that. You can try Yolov3 and Yolov3-tiny int8 quantization 
+#### Additional steps for int8 quantization
+Since int8 quantization requires a subset of the dataset as "representative data" to tune the quantization to, you first have to do some preprocessing of the dataset. In this case we use the Coco dataset. You can simply follow these steps:
+```bash
+# We'll store the dataset in data/dataset
+cd data
+mkdir dataset
+cd dataset
+# Download the dataset
+source ../../scripts/get_coco_dataset_2017.sh
+# Create a pickle representation for the dataset
+python ../../scripts/coco_convert.py --input ./coco/annotations/instances_val2017.json --output val2017.pkl
+# Convert the annotations to txt (used when converting to tflite)
+python coco_annotation.py --coco_path ./coco 
+```
+
+Now you can proceed to quantize yolo to int8 parameters (assumes you're back to the root directory of the repo).
+```bash
+# yolov4 quantize int8
+python convert_tflite.py --weights ./checkpoints/yolov4-416 --output ./checkpoints/yolov4-416-int8.tflite --quantize_mode int8 --dataset ./data/dataset/val2017.txt
+```
+
 ### Convert to TensorRT
 ```bash# yolov3
 python save_model.py --weights ./data/yolov3.weights --output ./checkpoints/yolov3.tf --input_size 416 --model yolov3
