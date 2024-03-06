@@ -61,7 +61,8 @@ python convert_tflite.py --weights ./checkpoints/yolov4-416 --output ./checkpoin
 python detect.py --weights ./checkpoints/yolov4-416.tflite --size 416 --model yolov4 --image ./data/kite.jpg --framework tflite
 ```
 ### Additional steps for int8 quantization
-This assumes you already have downloaded the weights and created a tensorflow checkpoint (first line in bash script above).
+This assumes you already have downloaded the weights and created a tensorflow checkpoint (first line in FIRST bash 'script').
+**Note** I just noticed this is not converting into tflite framework but not sure if that's an issue, I'll check ASAP.
 Since int8 quantization requires a subset of the dataset as "representative data" to tune the quantization to, you first have to do some preprocessing of the dataset. In this case we use the Coco dataset. You can simply follow these steps:
 ```bash
 # Important to run the scripts from scripts folder!
