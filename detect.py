@@ -37,7 +37,8 @@ def main(_argv):
 
     # image_data = utils.image_preprocess(np.copy(original_image), [input_size, input_size])
     image_data = cv2.resize(original_image, (input_size, input_size))
-    image_data = image_data / 255.
+    dividend = 1 if 'int8' in FLAGS.weights else 255.
+    image_data = image_data / dividend
     # image_data = image_data[np.newaxis, ...].astype(np.float32)
 
     images_data = []
@@ -46,19 +47,26 @@ def main(_argv):
     for i in range(1):
         images_data.append(image_data)
     images_data = np.asarray(images_data).astype(dtype)
+    print(images_data[0])
 
     if FLAGS.framework == 'tflite':
         interpreter = tf.lite.Interpreter(model_path=FLAGS.weights)
         interpreter.allocate_tensors()
         input_details = interpreter.get_input_details()
         output_details = interpreter.get_output_details()
+        print("input image", np.shape(images_data))
         for key,value in input_details[0].items():
             print(key,value)
         for key,value in output_details[0].items():
             print(key,value)
+        print(np.shape(images_data))
         interpreter.set_tensor(input_details[0]['index'], images_data)
         interpreter.invoke()
         pred = [interpreter.get_tensor(output_details[i]['index']) for i in range(len(output_details))]
+        if 'int8' in FLAGS.weights:
+            pred = [dequantize_tensor(pred[i], output_details[i]) for i in range(len(pred))]
+        print(np.shape(pred),np.asarray(pred).dtype)
+        input()
         if FLAGS.model == 'yolov3' and FLAGS.tiny == True:
             boxes, pred_conf = filter_boxes(pred[1], pred[0], score_threshold=0.25, input_shape=tf.constant([input_size, input_size]))
         else:
@@ -66,18 +74,20 @@ def main(_argv):
             for value in pred_bbox:
                 boxes = value[:, :, 0:4]
                 pred_conf = value[:, :, 4:]
-            # boxes, pred_conf = filter_boxes(pred[0], pred[1], score_threshold=0.25, input_shape=tf.constant([input_size, input_size]))
+            # boxes, pred_conf = filter_boxes(boxes, pred_conf, score_threshold=0.25, input_shape=tf.constant([input_size, input_size]))
     else:
         saved_model_loaded = tf.saved_model.load(FLAGS.weights, tags=[tag_constants.SERVING])
         infer = saved_model_loaded.signatures['serving_default']
         batch_data = tf.constant(images_data)
         pred_bbox = infer(batch_data)
-        for key,value in pred_bbox.items():
-            print(f"{key}: {np.shape(value)}")
+        
+        print(pred_bbox.keys())
         for key, value in pred_bbox.items():
+            print(np.shape(value))
             boxes = value[:, :, 0:4]
             pred_conf = value[:, :, 4:]
 
+    # boxes = tf.cast(boxes,tf.float32)
     boxes, scores, classes, valid_detections = tf.image.combined_non_max_suppression(
         boxes=tf.reshape(boxes, (tf.shape(boxes)[0], -1, 1, 4)),
         scores=tf.reshape(
@@ -94,6 +104,12 @@ def main(_argv):
     image.show()
     image = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
     cv2.imwrite(FLAGS.output, image)
+
+
+def dequantize_tensor(input,tensor_details):
+    scale = tensor_details['quantization'][0]
+    zero_point = tensor_details['quantization'][1]
+    return (scale*(input-zero_point)).astype(np.float32)
 
 if __name__ == '__main__':
     try:

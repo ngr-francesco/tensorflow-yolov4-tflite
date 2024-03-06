@@ -16,7 +16,7 @@ flags.DEFINE_string('dataset', "/Volumes/Elements/data/coco_dataset/coco/5k.txt"
 
 def representative_data_gen():
   fimage = open(FLAGS.dataset).read().split()
-  for input_value in range(10):
+  for input_value in range(1500):
     if os.path.exists(fimage[input_value]):
       original_image=cv2.imread(fimage[input_value])
       original_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
@@ -61,7 +61,7 @@ def demo():
 
   input_shape = input_details[0]['shape']
 
-  input_data = np.array(np.random.random_sample(input_shape), dtype=np.float32)
+  input_data = np.array(np.random.random_sample(input_shape), dtype=np.int8)
 
   interpreter.set_tensor(input_details[0]['index'], input_data)
   interpreter.invoke()
