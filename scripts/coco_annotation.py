@@ -6,20 +6,17 @@ from os.path import isfile, join
 from absl.flags import FLAGS
 import cv2
 
-flags.DEFINE_string('coco_data', './val2017.pkl', 'path to coco data')
-flags.DEFINE_string('classes', '../classes/coco.names', 'path to classes file')
-flags.DEFINE_string('coco_path', "/Volumes/Elements/data/coco_dataset/coco", 'resize images to')
-flags.DEFINE_string('image_path', "images/val2017", 'path to image val')
-flags.DEFINE_string('anno_path_val', './val2017.txt', 'output file')
+flags.DEFINE_string('coco_data', '../data/dataset/coco/val2017.pkl', 'path to coco data')
+flags.DEFINE_string('classes', '../data/classes/coco.names', 'path to classes file')
+flags.DEFINE_string('coco_path', "../data/dataset/coco", 'path to coco dataset')
+flags.DEFINE_string('image_path', "images/val2017", 'folder containing val images (relative to given "coco_path")')
+flags.DEFINE_string('output', '../data/dataset/coco/val2017.txt', 'output file')
 
 def convert_annotation(output, data, data_type = "val"):
     class_names = [c.strip() for c in open(FLAGS.classes).readlines()]
     replace_dict = {"couch": "sofa", "airplane": "aeroplane", "tv": "tvmonitor", "motorcycle": "motorbike"}
     if os.path.exists(output): os.remove(output)
-    # Use the real path, not absolute. WARNING: This can expose contributor's personal paths.
-    # Not a problem when using the default data/dataset dir, since it's ignored by git.
-    directory_path = os.path.realpath(os.path.join(FLAGS.coco_path, FLAGS.image_path))
-    print(directory_path)
+    directory_path = os.path.join(FLAGS.coco_path, FLAGS.image_path)
     # if data_type == "train":
     #     anno_path = directory_path + "/labels/train2014"
     #     image_path = os.path.join(directory_path, "trainvalno5k.txt")
@@ -29,7 +26,7 @@ def convert_annotation(output, data, data_type = "val"):
     # with open(image_path) as f:
     #     image_paths = f.readlines()
     # image_paths = [x.strip() for x in image_paths]
-    print("REAL PATH:", os.path.realpath(directory_path))
+
     image_paths = [f for f in listdir(directory_path) if isfile(join(directory_path, f))]
 
     check_classes = []
@@ -37,8 +34,7 @@ def convert_annotation(output, data, data_type = "val"):
     with open(output, 'a') as f:
         for image_path in image_paths:
             image_inds = image_path.split(".")[0]
-            
-            annotation = os.path.join(directory_path, image_path)
+            annotation = os.path.abspath(os.path.join(directory_path, image_path))
             # if os.path.exists(os.path.join(anno_path, image_inds + ".txt")):
             if image_inds in data:
                 objects = data[image_inds]["objects"]
@@ -62,14 +58,15 @@ def convert_annotation(output, data, data_type = "val"):
             f.write(annotation + "\n")
             count += 1
             # print(annotation)
-    print(count)
+            print(count)
     return
 
 def main(_argv):
     with open(FLAGS.coco_data, "rb") as input_file:
         data = pickle.load(input_file)
     data = data[1]
-    convert_annotation(FLAGS.anno_path_val, data)
+    
+    convert_annotation(FLAGS.output, data)
 
 if __name__ == '__main__':
     try:

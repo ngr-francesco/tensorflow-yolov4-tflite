@@ -12,19 +12,18 @@ flags.DEFINE_string('weights', './checkpoints/yolov4-416', 'path to weights file
 flags.DEFINE_string('output', './checkpoints/yolov4-416-fp32.tflite', 'path to output')
 flags.DEFINE_integer('input_size', 416, 'path to output')
 flags.DEFINE_string('quantize_mode', 'float32', 'quantize mode (int8, float16, float32)')
-flags.DEFINE_string('dataset', "/Volumes/Elements/data/coco_dataset/coco/5k.txt", 'path to dataset')
+flags.DEFINE_string('dataset', "./data/dataset/coco/val2017.txt", 'path to dataset')
 
 def representative_data_gen():
   fimage = open(FLAGS.dataset).read().split()
-  for input_value in range(1500):
+  for input_value in range(10):
     if os.path.exists(fimage[input_value]):
       original_image=cv2.imread(fimage[input_value])
       original_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
       image_data = utils.image_preprocess(np.copy(original_image), [FLAGS.input_size, FLAGS.input_size])
-      dtype = np.float32 if FLAGS.quantize_mode == 'int8' else np.float32
-      img_in = image_data[np.newaxis, ...].astype(dtype)
+      img_in = image_data[np.newaxis, ...].astype(np.float32)
       print("calibration image {}".format(fimage[input_value]))
-      yield {"input_1": img_in}
+      yield [img_in]
     else:
       continue
 
@@ -37,9 +36,9 @@ def save_tflite():
     converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS, tf.lite.OpsSet.SELECT_TF_OPS]
     converter.allow_custom_ops = True
   elif FLAGS.quantize_mode == 'int8':
-    converter.allow_custom_ops = True
-    converter.optimizations = [tf.lite.Optimize.DEFAULT]
+    print("CONVERTING!")
     converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8, tf.lite.OpsSet.SELECT_TF_OPS]
+    converter.optimizations = [tf.lite.Optimize.DEFAULT]
     converter.inference_input_type = tf.int8  # or tf.uint8
     converter.inference_output_type = tf.int8  # or tf.uint8
     converter.representative_dataset = representative_data_gen
@@ -61,7 +60,8 @@ def demo():
 
   input_shape = input_details[0]['shape']
 
-  input_data = np.array(np.random.random_sample(input_shape), dtype=np.int8)
+  dtype = np.float32 if not FLAGS.quantize_mode == 'int8' else np.int8
+  input_data = np.array(np.random.random_sample(input_shape), dtype=dtype)
 
   interpreter.set_tensor(input_details[0]['index'], input_data)
   interpreter.invoke()
