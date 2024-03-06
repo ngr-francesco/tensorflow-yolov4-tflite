@@ -47,7 +47,6 @@ def main(_argv):
     for i in range(1):
         images_data.append(image_data)
     images_data = np.asarray(images_data).astype(dtype)
-    print(images_data[0])
 
     if FLAGS.framework == 'tflite':
         interpreter = tf.lite.Interpreter(model_path=FLAGS.weights)
@@ -66,7 +65,6 @@ def main(_argv):
         if 'int8' in FLAGS.weights:
             pred = [dequantize_tensor(pred[i], output_details[i]) for i in range(len(pred))]
         print(np.shape(pred),np.asarray(pred).dtype)
-        input()
         if FLAGS.model == 'yolov3' and FLAGS.tiny == True:
             boxes, pred_conf = filter_boxes(pred[1], pred[0], score_threshold=0.25, input_shape=tf.constant([input_size, input_size]))
         else:
@@ -80,8 +78,6 @@ def main(_argv):
         infer = saved_model_loaded.signatures['serving_default']
         batch_data = tf.constant(images_data)
         pred_bbox = infer(batch_data)
-        for key,value in pred_bbox.items():
-            print(f"{key}: {np.shape(value)}")
         for key, value in pred_bbox.items():
             boxes = value[:, :, 0:4]
             pred_conf = value[:, :, 4:]

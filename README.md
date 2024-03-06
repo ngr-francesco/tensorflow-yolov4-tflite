@@ -80,7 +80,7 @@ Now you can proceed to quantize yolo to int8 parameters and run the demo (assume
 python convert_tflite.py --weights ./checkpoints/yolov4-416 --output ./checkpoints/yolov4-416-int8.tflite --quantize_mode int8 --dataset ./data/dataset/coco/val2017.txt
 
 # Run demo (make sure the right weight checkpoints are used! Note the int8 in the name)
-python detect.py --weights ./checkpoints/yolov4-416-int8.tflite --size 416 --model yolov4 --image ./data/kite.jpg --framework tflite
+python detect.py --weights ./checkpoints/yolov4-416-int8.tflite --size 416 --model yolov4 --image ./data/kite.jpg --framework tflite --output result-int8.png
 ```
 
 
